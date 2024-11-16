@@ -19,6 +19,13 @@ function GroundPlane() {
   );
 }
 
+//Terreno de Minecraft
+function MinecraftWorld() {
+  const { scene } = useGLTF('/terreno.glb'); // Reemplaza con la ruta del archivo exportado
+  
+  return <primitive object={scene} position={[20, -0.7 , -10]} scale={0.5}/>;
+}
+
 // Modelo principal
 function Model() {
   const { scene, animations } = useGLTF('/steveRigV3_2.glb');
@@ -33,6 +40,10 @@ function Model() {
       mixer.current = new THREE.AnimationMixer(scene);
       const idleAction = mixer.current.clipAction(animations.find(anim => anim.name === 'IDLE'));
       const walkAction = mixer.current.clipAction(animations.find(anim => anim.name === 'Walk'));
+      walkAction.setEffectiveTimeScale(1); // Acelera la reproducción
+      walkAction.setEffectiveWeight(1); // Establece el peso completo
+      walkAction.crossFadeTo(walkAction, 0); // Sin transición
+
       const jumpAction = mixer.current.clipAction(animations.find(anim => anim.name === 'Jump'));
       setAction({ idle: idleAction, walk: walkAction, jump: jumpAction });
 
@@ -44,11 +55,31 @@ function Model() {
   useFrame((state, delta) => {
     if (mixer.current) mixer.current.update(delta);
 
-    if (modelRef.current) {
-      // Clamping para limitar movimiento
-      modelRef.current.position.x = THREE.MathUtils.clamp(modelRef.current.position.x, -10, 10);
-      modelRef.current.position.z = THREE.MathUtils.clamp(modelRef.current.position.z, -10, 10);
+    if (modelRef.current && keysPressed['ArrowRight']) {
+      const direction = calculateDirection();
+      modelRef.current.rotation.y = direction;
+      modelRef.current.position.x += 0.05 * Math.sin(direction); // Movimiento instantáneo
+      modelRef.current.position.z += 0.05 * Math.cos(direction);
     }
+    if (modelRef.current && keysPressed['ArrowLeft']) {
+      const direction = calculateDirection();
+      modelRef.current.rotation.y = direction;
+      modelRef.current.position.x += 0.05 * Math.sin(direction); // Movimiento instantáneo
+      modelRef.current.position.z += 0.05 * Math.cos(direction);
+    }
+    if (modelRef.current && keysPressed['ArrowUp']) {
+      const direction = calculateDirection();
+      modelRef.current.rotation.y = direction;
+      modelRef.current.position.x += 0.05 * Math.sin(direction); // Movimiento instantáneo
+      modelRef.current.position.z += 0.05 * Math.cos(direction);
+    }
+    if (modelRef.current && keysPressed['ArrowDown']) {
+      const direction = calculateDirection();
+      modelRef.current.rotation.y = direction;
+      modelRef.current.position.x += 0.05 * Math.sin(direction); // Movimiento instantáneo
+      modelRef.current.position.z += 0.05 * Math.cos(direction);
+    }
+    
   });
 
   const handleKeyDown = (event) => {
@@ -63,14 +94,16 @@ function Model() {
         case 'ArrowLeft':
         case 'ArrowRight':
           if (!isJumping && action.walk) {
+            
             action.idle?.stop();
             action.walk?.play();
           }
   
+          // Calcular la dirección antes de mover
           const direction = calculateDirection();
           modelRef.current.rotation.y = direction;
-          
-          // Movimiento mientras camina o salta
+  
+          // Movimiento en la dirección calculada
           const adjustedSpeed = isJumping ? speed * 1.5 : speed; // Más rápido en el aire
           modelRef.current.position.x += adjustedSpeed * Math.sin(direction);
           modelRef.current.position.z += adjustedSpeed * Math.cos(direction);
@@ -91,7 +124,7 @@ function Model() {
   
               // Movimiento vertical (salto)
               if (progress < 1) {
-                modelRef.current.position.y = initialY + Math.sin(Math.PI * progress) * 2; // Curva de salto
+                modelRef.current.position.y = initialY + Math.sin(Math.PI * progress) * 1; // Curva de salto
               } else {
                 clearInterval(jumpInterval);
                 modelRef.current.position.y = initialY; // Regresar al suelo
@@ -103,9 +136,9 @@ function Model() {
               // Movimiento horizontal durante el salto
               if (keysPressed['ArrowUp'] || keysPressed['ArrowDown'] || keysPressed['ArrowLeft'] || keysPressed['ArrowRight']) {
                 const direction = calculateDirection();
-                modelRef.current.rotation.y = direction;
-                modelRef.current.position.x += speed * 1.5 * Math.sin(direction); // Más velocidad en el aire
-                modelRef.current.position.z += speed * 1.5 * Math.cos(direction);
+                modelRef.current.rotation.y = direction; // Asegurar rotación
+                modelRef.current.position.x += speed * 3 * Math.sin(direction); // Más velocidad en el aire
+                modelRef.current.position.z += speed * 3 * Math.cos(direction);
               }
             }, 50);
           }
@@ -116,7 +149,6 @@ function Model() {
       }
     }
   };
-  
 
   const handleKeyUp = (event) => {
     setKeysPressed((prevKeys) => ({ ...prevKeys, [event.key]: false }));
@@ -128,24 +160,24 @@ function Model() {
   };
 
   const calculateDirection = () => {
-    let offset = 0;
+    let offset = Math.PI;
     if (keysPressed['ArrowUp']) {
-      if (keysPressed['ArrowLeft']) {
+      if (keysPressed['ArrowRight']) {
         offset = Math.PI / 4;
-      } else if (keysPressed['ArrowRight']) {
+      } else if (keysPressed['ArrowLeft']) {
         offset = -Math.PI / 4;
       }
     } else if (keysPressed['ArrowDown']) {
-      if (keysPressed['ArrowLeft']) {
+      if (keysPressed['ArrowRight']) {
         offset = Math.PI * 3 / 4;
-      } else if (keysPressed['ArrowRight']) {
+      } else if (keysPressed['ArrowLeft']) {
         offset = -Math.PI * 3 / 4;
       } else {
-        offset = Math.PI;
+        offset = 0;
       }
-    } else if (keysPressed['ArrowLeft']) {
-      offset = Math.PI / 2;
     } else if (keysPressed['ArrowRight']) {
+      offset = Math.PI / 2;
+    } else if (keysPressed['ArrowLeft']) {
       offset = -Math.PI / 2;
     }
     return offset;
@@ -170,7 +202,7 @@ function App() {
     <Canvas style={{ height: '100vh' }} camera={{ position: [0, 5, 10] }}>
       <ambientLight intensity={0.5} />
       <directionalLight position={[5, 5, 5]} />
-      <GroundPlane />
+      <MinecraftWorld />
       <Model />
     </Canvas>
   );
