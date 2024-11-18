@@ -163,15 +163,15 @@ function Model() {
     let offset = Math.PI;
     if (keysPressed['ArrowUp']) {
       if (keysPressed['ArrowRight']) {
-        offset = Math.PI / 4;
+        offset = Math.PI *3 / 4;
       } else if (keysPressed['ArrowLeft']) {
-        offset = -Math.PI / 4;
+        offset = -Math.PI *3 / 4;
       }
     } else if (keysPressed['ArrowDown']) {
       if (keysPressed['ArrowRight']) {
-        offset = Math.PI * 3 / 4;
+        offset = Math.PI / 4;
       } else if (keysPressed['ArrowLeft']) {
-        offset = -Math.PI * 3 / 4;
+        offset = -Math.PI / 4;
       } else {
         offset = 0;
       }
